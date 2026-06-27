@@ -1,4 +1,3 @@
-// @ts-expect-error - CSS imports are handled by Next.js
 import "../styles/globals.css";
 import { type Metadata } from "next";
 import { ThemeProvider } from "~/components/ui/theme-provider";
