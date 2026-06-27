@@ -72,6 +72,7 @@ export default function Editor({
     };
     void loadLocal();
     void loadVersions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentId, editor]);
 
   const handleSave = useCallback(
@@ -204,7 +205,7 @@ export default function Editor({
         onClick={() => editor?.chain().focus().toggleBlockquote().run()}
         className={editor?.isActive("blockquote") ? "bg-accent" : ""}
       >
-        " Quote
+        &quot; Quote
       </Button>
       <Button
         size="sm"

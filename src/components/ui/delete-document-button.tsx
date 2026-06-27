@@ -63,7 +63,7 @@ export default function DeleteDocumentButton({
             <p className="text-muted-foreground mb-6 text-sm">
               Are you sure you want to delete{" "}
               <span className="text-foreground font-medium">
-                "{documentTitle}"
+                &quot;{documentTitle}&quot;
               </span>
               ? This cannot be undone.
             </p>

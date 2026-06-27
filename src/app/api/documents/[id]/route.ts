@@ -22,7 +22,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    if (document.ownerId !== session.user.id) {
+    if (document.ownerId !== session?.user?.id) {
       return NextResponse.json(
         { error: "Only the owner can delete this document" },
         { status: 403 },

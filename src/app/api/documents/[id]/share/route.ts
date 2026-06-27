@@ -23,8 +23,8 @@ export async function POST(
     const document = await db.document.findUnique({
       where: { id },
     });
-
-    if (!document || document.ownerId !== session.user.id) {
+    // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
+    if (!document || document.ownerId !== session?.user?.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

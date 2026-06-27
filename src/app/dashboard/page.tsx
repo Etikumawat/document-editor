@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 import { Button } from "~/components/ui/button";
@@ -98,45 +97,51 @@ export default async function Dashboard() {
           </div>
         ) : (
           <div className="mb-10 grid gap-3">
-            {documents.map((doc) => (
-              <div
-                key={doc.id}
-                className="hover:bg-accent hover:border-primary/30 group relative flex items-center justify-between rounded-xl border p-4 transition-all"
-              >
-                {/* Left side — clicking goes to editor */}
-                <Link
-                  href={`/editor/${doc.id}`}
-                  className="flex flex-1 items-center gap-3"
+            {documents.map(
+              (doc: {
+                id: string;
+                title: string;
+                updatedAt: Date;
+                collaborators: { id: string }[];
+              }) => (
+                <div
+                  key={doc.id}
+                  className="hover:bg-accent hover:border-primary/30 group relative flex items-center justify-between rounded-xl border p-4 transition-all"
                 >
-                  <span className="text-2xl">📄</span>
-                  <div>
-                    <h4 className="group-hover:text-primary font-medium transition-colors">
-                      {doc.title}
-                    </h4>
-                    <p className="text-muted-foreground mt-0.5 text-xs">
-                      Updated{" "}
-                      {new Date(doc.updatedAt).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </p>
+                  {/* Left side — clicking goes to editor */}
+                  <Link
+                    href={`/editor/${doc.id}`}
+                    className="flex flex-1 items-center gap-3"
+                  >
+                    <span className="text-2xl">📄</span>
+                    <div>
+                      <h4 className="group-hover:text-primary font-medium transition-colors">
+                        {doc.title}
+                      </h4>
+                      <p className="text-muted-foreground mt-0.5 text-xs">
+                        Updated{" "}
+                        {new Date(doc.updatedAt).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </p>
+                    </div>
+                  </Link>
+                  {/* Right side — completely outside Link */}
+                  <div className="ml-4 flex shrink-0 items-center gap-2">
+                    <Badge variant="outline" className="text-xs">
+                      {doc.collaborators.length} collaborator
+                      {doc.collaborators.length !== 1 ? "s" : ""}
+                    </Badge>
+                    <DeleteDocumentButton
+                      documentId={doc.id}
+                      documentTitle={doc.title}
+                    />
                   </div>
-                </Link>
-
-                {/* Right side — completely outside Link */}
-                <div className="ml-4 flex shrink-0 items-center gap-2">
-                  <Badge variant="outline" className="text-xs">
-                    {doc.collaborators.length} collaborator
-                    {doc.collaborators.length !== 1 ? "s" : ""}
-                  </Badge>
-                  <DeleteDocumentButton
-                    documentId={doc.id}
-                    documentTitle={doc.title}
-                  />
                 </div>
-              </div>
-            ))}
+              ),
+            )}
           </div>
         )}
 
@@ -153,46 +158,53 @@ export default async function Dashboard() {
               </div>
             </div>
             <div className="grid gap-3">
-              {sharedDocs.map((doc) => {
-                const myRole = doc.collaborators.find(
-                  (c) => c.userId === session.user.id,
-                )?.role;
-                return (
-                  <Link key={doc.id} href={`/editor/${doc.id}`}>
-                    <div className="hover:bg-accent hover:border-primary/30 group cursor-pointer rounded-xl border p-4 transition-all">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl">🤝</span>
-                          <div>
-                            <h4 className="group-hover:text-primary font-medium transition-colors">
-                              {doc.title}
-                            </h4>
-                            <p className="text-muted-foreground mt-0.5 text-xs">
-                              Updated{" "}
-                              {new Date(doc.updatedAt).toLocaleDateString(
-                                "en-US",
-                                {
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                },
-                              )}
-                            </p>
+              {sharedDocs.map(
+                (doc: {
+                  id: string;
+                  title: string;
+                  updatedAt: Date;
+                  collaborators: { id: string; userId: string; role: string }[];
+                }) => {
+                  const myRole = doc.collaborators.find(
+                    (c) => c.userId === session.user.id,
+                  )?.role;
+                  return (
+                    <Link key={doc.id} href={`/editor/${doc.id}`}>
+                      <div className="hover:bg-accent hover:border-primary/30 group cursor-pointer rounded-xl border p-4 transition-all">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">🤝</span>
+                            <div>
+                              <h4 className="group-hover:text-primary font-medium transition-colors">
+                                {doc.title}
+                              </h4>
+                              <p className="text-muted-foreground mt-0.5 text-xs">
+                                Updated{" "}
+                                {new Date(doc.updatedAt).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  },
+                                )}
+                              </p>
+                            </div>
                           </div>
+                          <Badge
+                            variant={
+                              myRole === "EDITOR" ? "default" : "secondary"
+                            }
+                            className="text-xs"
+                          >
+                            {myRole}
+                          </Badge>
                         </div>
-                        <Badge
-                          variant={
-                            myRole === "EDITOR" ? "default" : "secondary"
-                          }
-                          className="text-xs"
-                        >
-                          {myRole}
-                        </Badge>
                       </div>
-                    </div>
-                  </Link>
-                );
-              })}
+                    </Link>
+                  );
+                },
+              )}
             </div>
           </>
         )}

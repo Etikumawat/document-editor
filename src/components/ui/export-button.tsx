@@ -16,7 +16,7 @@ export default function ExportButton({ editor, title }: ExportButtonProps) {
     if (!editor) return;
 
     const html = editor.getHTML();
-    let md = html
+    const md = html
       .replace(/<h1>(.*?)<\/h1>/g, "# $1\n\n")
       .replace(/<h2>(.*?)<\/h2>/g, "## $1\n\n")
       .replace(/<h3>(.*?)<\/h3>/g, "### $1\n\n")
