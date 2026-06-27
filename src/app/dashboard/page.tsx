@@ -62,6 +62,26 @@ export default async function Dashboard() {
           </div>
         )}
       </main>
+      <footer className="text-muted-foreground bg-muted/5 border-t px-6 py-4 text-center text-xs">
+        Built by{" "}
+        <a
+          href="https://github.com/Etikumawat/document-editor"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-foreground underline"
+        >
+          Eti Kumawat
+        </a>{" "}
+        ·{" "}
+        <a
+          href="https://www.linkedin.com/in/eti-kumawat-5502bb247/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-foreground underline"
+        >
+          LinkedIn
+        </a>
+      </footer>
     </div>
   );
 }
