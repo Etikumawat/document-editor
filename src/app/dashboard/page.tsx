@@ -6,12 +6,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import CreateDocumentButton from "~/components/ui/create-document-button";
 import ThemeToggle from "~/components/ui/theme-toggle";
-import dynamic from "next/dynamic";
-
-const SyncStatus = dynamic(
-  () => import("~/components/ui/sync-status").then((mod) => mod.default),
-  { ssr: false },
-);
+import SyncStatusWrapper from "~/components/ui/sync-status-wrapper";
 
 export default async function Dashboard() {
   const session = await auth();
@@ -60,7 +55,7 @@ export default async function Dashboard() {
           <h1 className="text-xl font-bold">CollabDoc</h1>
         </div>
         <div className="flex items-center gap-3">
-          <SyncStatus />
+          <SyncStatusWrapper />
           <ThemeToggle />
           <div className="flex items-center gap-2 rounded-full border px-3 py-1">
             <div className="bg-primary/20 flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold">
