@@ -241,9 +241,9 @@ export default async function Dashboard() {
           <p className="text-muted-foreground mb-4">
             {error instanceof Error ? error.message : "Unknown error"}
           </p>
-          <a href="/api/auth/signout" className="underline">
+          <Link href="/api/auth/signout" className="underline">
             Sign out and try again
-          </a>
+          </Link>
         </div>
       </div>
     );
