@@ -8,9 +8,10 @@ import CreateDocumentButton from "~/components/ui/create-document-button";
 import ThemeToggle from "~/components/ui/theme-toggle";
 import dynamic from "next/dynamic";
 
-const SyncStatus = dynamic(() => import("~/components/ui/sync-status"), {
-  ssr: false,
-});
+const SyncStatus = dynamic(
+  () => import("~/components/ui/sync-status").then((mod) => mod.default),
+  { ssr: false },
+);
 
 export default async function Dashboard() {
   const session = await auth();
