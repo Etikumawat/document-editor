@@ -5,6 +5,7 @@ export const env = createEnv({
   server: {
     AUTH_SECRET: z.string(),
     AUTH_URL: z.string().url().optional(),
+    DIRECT_URL: z.string().url().optional(),
     AUTH_GOOGLE_ID: z.string(),
     AUTH_GOOGLE_SECRET: z.string(),
     GROQ_API_KEY: z.string(),
@@ -26,6 +27,7 @@ export const env = createEnv({
     GROQ_API_KEY: process.env.GROQ_API_KEY,
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
+    DIRECT_URL: process.env.DIRECT_URL,
   },
 
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
