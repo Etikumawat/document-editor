@@ -14,15 +14,13 @@ export async function POST() {
       where: { email: session.user.email },
     });
 
-    if (!user) {
-      user = await db.user.create({
-        data: {
-          email: session.user.email,
-          name: session.user.name,
-          image: session.user.image,
-        },
-      });
-    }
+    user ??= await db.user.create({
+      data: {
+        email: session.user.email,
+        name: session.user.name,
+        image: session.user.image,
+      },
+    });
 
     const document = await db.document.create({
       data: {

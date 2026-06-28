@@ -17,15 +17,13 @@ export default async function Dashboard() {
     where: { email: session.user.email! },
   });
 
-  if (!user) {
-    user = await db.user.create({
-      data: {
-        email: session.user.email!,
-        name: session.user.name,
-        image: session.user.image,
-      },
-    });
-  }
+  user ??= await db.user.create({
+    data: {
+      email: session.user.email!,
+      name: session.user.name,
+      image: session.user.image,
+    },
+  });
 
   const documents = await db.document.findMany({
     where: { ownerId: user.id },
@@ -169,7 +167,7 @@ export default async function Dashboard() {
                   collaborators: { id: string; userId: string; role: string }[];
                 }) => {
                   const myRole = doc.collaborators.find(
-                    (c) => c.userId === user!.id,
+                    (c) => c.userId === user?.id,
                   )?.role;
                   return (
                     <Link key={doc.id} href={`/editor/${doc.id}`}>
