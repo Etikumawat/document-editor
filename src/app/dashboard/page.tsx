@@ -132,19 +132,6 @@ export default async function Dashboard() {
                       </p>
                     </div>
                   </Link>
-                  <div
-                    className="ml-4 flex shrink-0 items-center gap-2"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Badge variant="outline" className="text-xs">
-                      {doc.collaborators.length} collaborator
-                      {doc.collaborators.length !== 1 ? "s" : ""}
-                    </Badge>
-                    <DeleteDocumentButton
-                      documentId={doc.id}
-                      documentTitle={doc.title}
-                    />
-                  </div>
                 </div>
               ))}
             </div>
