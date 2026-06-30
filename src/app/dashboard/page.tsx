@@ -9,6 +9,8 @@ import ThemeToggle from "~/components/ui/theme-toggle";
 import SyncStatusWrapper from "~/components/ui/sync-status-wrapper";
 import DeleteDocumentButton from "~/components/ui/delete-document-button";
 import SearchBar from "~/components/ui/search-bar";
+import AppLogo from "~/components/ui/app-logo";
+import UserMenu from "~/components/ui/user-menu";
 
 const PAGE_SIZE = 10;
 
@@ -86,24 +88,15 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
       <div className="bg-background flex min-h-screen flex-col">
         {/* Navbar */}
         <nav className="bg-background/80 sticky top-0 z-10 flex items-center justify-between border-b px-6 py-3 backdrop-blur">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">📝</span>
-            <h1 className="text-xl font-bold">CollabDoc</h1>
-          </div>
+          <AppLogo />
           <div className="flex items-center gap-3">
             <SyncStatusWrapper />
             <ThemeToggle />
-            <div className="flex items-center gap-2 rounded-full border px-3 py-1">
-              <div className="bg-primary/20 flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold">
-                {session.user.name?.[0]?.toUpperCase()}
-              </div>
-              <span className="text-sm font-medium">{session.user.name}</span>
-            </div>
-            <Link href="/api/auth/signout">
-              <Button variant="outline" size="sm">
-                Sign out
-              </Button>
-            </Link>
+            <UserMenu
+              name={session.user.name ?? "User"}
+              email={session.user.email ?? ""}
+              image={session.user.image}
+            />
           </div>
         </nav>
 
@@ -111,10 +104,10 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
         <div className="from-primary/5 via-background to-background border-b bg-gradient-to-br px-6 py-10">
           <div className="mx-auto max-w-4xl">
             <h2 className="mb-2 text-3xl font-bold">
-              Welcome back, {session.user.name?.split(" ")[0]}
+              {session.user.name?.split(" ")[0]}&apos;s Workspace
             </h2>
             <p className="text-muted-foreground mb-6">
-              Your documents are synced and ready to edit.
+              All your documents, synced and ready to edit.
             </p>
             <SearchBar defaultValue={searchQuery} />
           </div>

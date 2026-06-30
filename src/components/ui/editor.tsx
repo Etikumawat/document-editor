@@ -13,6 +13,7 @@ import Link from "next/link";
 import AIToolbar from "~/components/ui/ai-toolbar";
 import ThemeToggle from "~/components/ui/theme-toggle";
 import ExportButton from "~/components/ui/export-button";
+import BackButton from "./back-button";
 
 const SyncStatus = dynamic(() => import("~/components/ui/sync-status"), {
   ssr: false,
@@ -239,11 +240,7 @@ export default function Editor({
       {/* SINGLE Navbar — no duplicates */}
       <nav className="bg-background/80 sticky top-0 z-10 flex items-center justify-between border-b px-6 py-3 backdrop-blur">
         <div className="flex items-center gap-4">
-          <Link href="/dashboard">
-            <Button variant="ghost" size="sm">
-              ← Back
-            </Button>
-          </Link>
+          <BackButton />
           <input
             value={title}
             onChange={(e) => void handleTitleChange(e.target.value)}
