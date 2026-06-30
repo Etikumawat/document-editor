@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { Search, Loader2, X } from "lucide-react";
 
 interface SearchBarProps {
   defaultValue?: string;
@@ -9,12 +10,20 @@ interface SearchBarProps {
 
 export default function SearchBar({ defaultValue = "" }: SearchBarProps) {
   const [query, setQuery] = useState(defaultValue);
+  const [isSearching, setIsSearching] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    setIsSearching(true);
 
     debounceTimer.current = setTimeout(() => {
       const params = new URLSearchParams();
@@ -31,34 +40,31 @@ export default function SearchBar({ defaultValue = "" }: SearchBarProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
+  // Reset searching state once the URL/server response actually updates
+  useEffect(() => {
+    setIsSearching(false);
+  }, [defaultValue]);
+
   return (
     <div className="relative max-w-md">
-      <svg
-        className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-        />
-      </svg>
+      {isSearching ? (
+        <Loader2 className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 animate-spin" />
+      ) : (
+        <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+      )}
       <input
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search your documents..."
-        className="bg-background focus:ring-primary/20 w-full rounded-lg border py-2 pr-4 pl-9 text-sm outline-none focus:ring-2"
+        className="bg-background focus:ring-primary/20 w-full rounded-lg border py-2 pr-9 pl-9 text-sm outline-none focus:ring-2"
       />
       {query && (
         <button
           onClick={() => setQuery("")}
           className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
         >
-          ✕
+          <X className="h-3.5 w-3.5" />
         </button>
       )}
     </div>

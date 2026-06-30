@@ -11,6 +11,7 @@ import DeleteDocumentButton from "~/components/ui/delete-document-button";
 import SearchBar from "~/components/ui/search-bar";
 import AppLogo from "~/components/ui/app-logo";
 import UserMenu from "~/components/ui/user-menu";
+import DocumentLink from "~/components/ui/document-link";
 
 const PAGE_SIZE = 10;
 
@@ -148,10 +149,7 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
                     key={doc.id}
                     className="hover:bg-accent hover:border-primary/30 group relative flex items-center justify-between rounded-xl border p-4 transition-all"
                   >
-                    <Link
-                      href={`/editor/${doc.id}`}
-                      className="flex flex-1 items-center gap-3"
-                    >
+                    <DocumentLink href={`/editor/${doc.id}`} className="block">
                       <span className="text-2xl">📄</span>
                       <div>
                         <h4 className="group-hover:text-primary font-medium transition-colors">
@@ -171,7 +169,7 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
                           })}
                         </p>
                       </div>
-                    </Link>
+                    </DocumentLink>
                     <div className="ml-4 flex shrink-0 items-center gap-2">
                       <Badge variant="outline" className="text-xs">
                         {doc.collaborators.length} collaborator
