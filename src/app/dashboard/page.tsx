@@ -8,20 +8,22 @@ import CreateDocumentButton from "~/components/ui/create-document-button";
 import ThemeToggle from "~/components/ui/theme-toggle";
 import SyncStatusWrapper from "~/components/ui/sync-status-wrapper";
 import DeleteDocumentButton from "~/components/ui/delete-document-button";
+import SearchBar from "~/components/ui/search-bar";
 
 const PAGE_SIZE = 10;
 
 interface DashboardProps {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; q?: string }>;
 }
 
 export default async function Dashboard({ searchParams }: DashboardProps) {
   const session = await auth();
   if (!session?.user?.email) redirect("/api/auth/signin");
 
-  const { page } = await searchParams;
+  const { page, q } = await searchParams;
   const currentPage = Math.max(1, parseInt(page ?? "1"));
   const skip = (currentPage - 1) * PAGE_SIZE;
+  const searchQuery = q?.trim() ?? "";
 
   try {
     const user = await db.user.upsert({
@@ -37,34 +39,48 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
       },
     });
 
+    const whereClause = {
+      ownerId: user.id,
+      ...(searchQuery
+        ? {
+            title: {
+              contains: searchQuery,
+              mode: "insensitive" as const,
+            },
+          }
+        : {}),
+    };
+
     const totalDocuments = await db.document.count({
-      where: { ownerId: user.id },
+      where: whereClause,
     });
 
     const totalPages = Math.ceil(totalDocuments / PAGE_SIZE);
 
     const documents = await db.document.findMany({
-      where: { ownerId: user.id },
+      where: whereClause,
       orderBy: { updatedAt: "desc" },
       include: { collaborators: true },
       skip,
       take: PAGE_SIZE,
     });
 
-    const sharedDocs = await db.document.findMany({
-      where: {
-        collaborators: {
-          some: {
-            userId: user.id,
-            role: { in: ["EDITOR", "VIEWER"] },
+    const sharedDocs = searchQuery
+      ? []
+      : await db.document.findMany({
+          where: {
+            collaborators: {
+              some: {
+                userId: user.id,
+                role: { in: ["EDITOR", "VIEWER"] },
+              },
+            },
+            ownerId: { not: user.id },
           },
-        },
-        ownerId: { not: user.id },
-      },
-      orderBy: { updatedAt: "desc" },
-      include: { collaborators: true },
-      take: 10,
-    });
+          orderBy: { updatedAt: "desc" },
+          include: { collaborators: true },
+          take: 10,
+        });
 
     return (
       <div className="bg-background flex min-h-screen flex-col">
@@ -95,11 +111,12 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
         <div className="from-primary/5 via-background to-background border-b bg-gradient-to-br px-6 py-10">
           <div className="mx-auto max-w-4xl">
             <h2 className="mb-2 text-3xl font-bold">
-              Welcome back, {session.user.name?.split(" ")[0]} 👋
+              Welcome back, {session.user.name?.split(" ")[0]}
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground mb-6">
               Your documents are synced and ready to edit.
             </p>
+            <SearchBar defaultValue={searchQuery} />
           </div>
         </div>
 
@@ -107,7 +124,9 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
         <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-8">
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <h3 className="text-xl font-semibold">My Documents</h3>
+              <h3 className="text-xl font-semibold">
+                {searchQuery ? `Results for "${searchQuery}"` : "My Documents"}
+              </h3>
               <p className="text-muted-foreground mt-0.5 text-sm">
                 {totalDocuments} document{totalDocuments !== 1 ? "s" : ""}
               </p>
@@ -117,12 +136,16 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
 
           {documents.length === 0 ? (
             <div className="mb-8 rounded-xl border-2 border-dashed p-12 text-center">
-              <p className="mb-3 text-4xl">📄</p>
-              <p className="text-lg font-medium">No documents yet</p>
-              <p className="text-muted-foreground mt-1 mb-4 text-sm">
-                Create your first document to get started
+              <p className="mb-3 text-4xl">{searchQuery ? "🔍" : "📄"}</p>
+              <p className="text-lg font-medium">
+                {searchQuery ? "No documents found" : "No documents yet"}
               </p>
-              <CreateDocumentButton />
+              <p className="text-muted-foreground mt-1 mb-4 text-sm">
+                {searchQuery
+                  ? `Try a different search term`
+                  : "Create your first document to get started"}
+              </p>
+              {!searchQuery && <CreateDocumentButton />}
             </div>
           ) : (
             <>
@@ -147,6 +170,11 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
                             month: "short",
                             day: "numeric",
                             year: "numeric",
+                          })}{" "}
+                          at{" "}
+                          {new Date(doc.updatedAt).toLocaleTimeString("en-US", {
+                            hour: "numeric",
+                            minute: "2-digit",
                           })}
                         </p>
                       </div>
@@ -173,7 +201,7 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
                   </p>
                   <div className="flex items-center gap-2">
                     <Link
-                      href={`/dashboard?page=${Math.max(1, currentPage - 1)}`}
+                      href={`/dashboard?page=${Math.max(1, currentPage - 1)}${searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ""}`}
                     >
                       <Button
                         variant="outline"
@@ -198,7 +226,9 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
                                 ...
                               </span>
                             )}
-                            <Link href={`/dashboard?page=${p}`}>
+                            <Link
+                              href={`/dashboard?page=${p}${searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ""}`}
+                            >
                               <Button
                                 variant={
                                   p === currentPage ? "default" : "outline"
@@ -213,7 +243,7 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
                         ))}
                     </div>
                     <Link
-                      href={`/dashboard?page=${Math.min(totalPages, currentPage + 1)}`}
+                      href={`/dashboard?page=${Math.min(totalPages, currentPage + 1)}${searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ""}`}
                     >
                       <Button
                         variant="outline"
@@ -229,7 +259,7 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
             </>
           )}
 
-          {/* Shared with me */}
+          {/* Shared with me — only show when not searching */}
           {sharedDocs.length > 0 && (
             <>
               <div className="mb-6 flex items-center justify-between">
