@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { type Editor } from "@tiptap/react";
+import { FileText, FileType, Loader2 } from "lucide-react";
 
 interface ExportButtonProps {
   editor: Editor | null;
@@ -10,37 +11,63 @@ interface ExportButtonProps {
 }
 
 export default function ExportButton({ editor, title }: ExportButtonProps) {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<"word" | "pdf" | null>(null);
 
-  const exportMarkdown = () => {
+  const exportWord = () => {
     if (!editor) return;
+    setLoading("word");
 
-    const html = editor.getHTML();
-    const md = html
-      .replace(/<h1>(.*?)<\/h1>/g, "# $1\n\n")
-      .replace(/<h2>(.*?)<\/h2>/g, "## $1\n\n")
-      .replace(/<h3>(.*?)<\/h3>/g, "### $1\n\n")
-      .replace(/<strong>(.*?)<\/strong>/g, "**$1**")
-      .replace(/<em>(.*?)<\/em>/g, "_$1_")
-      .replace(/<code>(.*?)<\/code>/g, "`$1`")
-      .replace(/<p>(.*?)<\/p>/g, "$1\n\n")
-      .replace(/<li>(.*?)<\/li>/g, "- $1\n")
-      .replace(/<blockquote>(.*?)<\/blockquote>/g, "> $1\n")
-      .replace(/<[^>]*>/g, "")
-      .trim();
+    try {
+      const html = editor.getHTML();
 
-    const blob = new Blob([md], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${title}.md`;
-    a.click();
-    URL.revokeObjectURL(url);
+      const docHtml = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <meta charset="utf-8">
+          <title>${title}</title>
+          <style>
+            body { font-family: Calibri, Arial, sans-serif; font-size: 12pt; line-height: 1.5; }
+            h1 { font-size: 20pt; font-weight: bold; margin-bottom: 8pt; }
+            h2 { font-size: 16pt; font-weight: bold; margin-top: 14pt; margin-bottom: 6pt; }
+            h3 { font-size: 13pt; font-weight: bold; margin-top: 12pt; margin-bottom: 6pt; }
+            p { margin: 0 0 10pt 0; }
+            blockquote { color: #595959; font-style: italic; border-left: 3px solid #ccc; padding-left: 10pt; margin-left: 0; }
+            code, pre { font-family: 'Courier New', monospace; background: #f5f5f5; }
+            .date { color: #808080; font-style: italic; margin-bottom: 16pt; }
+          </style>
+        </head>
+        <body>
+          <h1>${title}</h1>
+          <p class="date">Exported on ${new Date().toLocaleDateString("en-US", {
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          })}</p>
+          ${html}
+        </body>
+        </html>
+      `;
+
+      const blob = new Blob(["\ufeff", docHtml], {
+        type: "application/msword",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${title}.doc`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("Word export error:", e);
+      alert("Word export failed. Please try again.");
+    } finally {
+      setLoading(null);
+    }
   };
 
   const exportPDF = async () => {
     if (!editor) return;
-    setLoading(true);
+    setLoading("pdf");
 
     try {
       const { default: jsPDF } = await import("jspdf");
@@ -58,7 +85,6 @@ export default function ExportButton({ editor, title }: ExportButtonProps) {
       const lineHeight = 7;
       const pageHeight = pdf.internal.pageSize.getHeight();
 
-      // Helper to add new page if needed
       const checkNewPage = () => {
         if (yPosition > pageHeight - 20) {
           pdf.addPage();
@@ -66,13 +92,11 @@ export default function ExportButton({ editor, title }: ExportButtonProps) {
         }
       };
 
-      // Add title
       pdf.setFontSize(20);
       pdf.setFont("helvetica", "bold");
       pdf.text(title, margin, yPosition);
       yPosition += lineHeight * 2;
 
-      // Add date
       pdf.setFontSize(10);
       pdf.setFont("helvetica", "normal");
       pdf.setTextColor(128, 128, 128);
@@ -84,12 +108,10 @@ export default function ExportButton({ editor, title }: ExportButtonProps) {
       yPosition += lineHeight * 1.5;
       pdf.setTextColor(0, 0, 0);
 
-      // Draw separator line
       pdf.setDrawColor(200, 200, 200);
       pdf.line(margin, yPosition, pageWidth - margin, yPosition);
       yPosition += lineHeight;
 
-      // Parse HTML content and render as text
       const html = editor.getHTML();
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, "text/html");
@@ -160,7 +182,6 @@ export default function ExportButton({ editor, title }: ExportButtonProps) {
           yPosition += blockHeight + 2;
           pdf.setFont("helvetica", "normal");
         } else {
-          // Regular paragraph
           pdf.setFontSize(11);
           pdf.setFont("helvetica", "normal");
           const lines = pdf.splitTextToSize(text, maxWidth) as string[];
@@ -169,7 +190,6 @@ export default function ExportButton({ editor, title }: ExportButtonProps) {
         }
       }
 
-      // Footer on each page
       const totalPages = pdf.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         pdf.setPage(i);
@@ -192,7 +212,7 @@ export default function ExportButton({ editor, title }: ExportButtonProps) {
       console.error("PDF export error:", e);
       alert("PDF export failed. Please try again.");
     } finally {
-      setLoading(false);
+      setLoading(null);
     }
   };
 
@@ -201,20 +221,30 @@ export default function ExportButton({ editor, title }: ExportButtonProps) {
       <Button
         size="sm"
         variant="outline"
-        onClick={exportMarkdown}
-        disabled={loading}
-        title="Export as Markdown"
+        onClick={exportWord}
+        disabled={loading !== null}
+        title="Export as Word document"
       >
-        ⬇️ MD
+        {loading === "word" ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        ) : (
+          <FileText className="h-3.5 w-3.5" />
+        )}
+        <span className="ml-1.5">DOCX</span>
       </Button>
       <Button
         size="sm"
         variant="outline"
         onClick={() => void exportPDF()}
-        disabled={loading}
+        disabled={loading !== null}
         title="Export as PDF"
       >
-        {loading ? "⏳..." : "⬇️ PDF"}
+        {loading === "pdf" ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        ) : (
+          <FileType className="h-3.5 w-3.5" />
+        )}
+        <span className="ml-1.5">PDF</span>
       </Button>
     </div>
   );
