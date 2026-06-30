@@ -266,7 +266,7 @@ export default function Editor({
           <span className="text-muted-foreground hidden text-sm md:block">
             {userName}
           </span>
-          {!isViewer && (
+          {/* {!isViewer && (
             <Button
               size="sm"
               variant="outline"
@@ -274,7 +274,7 @@ export default function Editor({
             >
               History
             </Button>
-          )}
+          )} */}
           {role === "OWNER" && (
             <Button
               size="sm"
@@ -393,7 +393,7 @@ export default function Editor({
       <footer className="text-muted-foreground border-t px-6 py-4 text-center text-sm">
         Built by{" "}
         <a
-          href="https://github.com/etikumawat"
+          href="https://github.com/Etikumawat/document-editor"
           target="_blank"
           className="hover:text-foreground font-medium underline"
         >
@@ -401,7 +401,7 @@ export default function Editor({
         </a>{" "}
         ·{" "}
         <a
-          href="https://linkedin.com/in/etikumawat"
+          href="https://www.linkedin.com/in/eti-kumawat-5502bb247/"
           target="_blank"
           className="hover:text-foreground font-medium underline"
         >
