@@ -28,7 +28,7 @@ export default async function LoginPage() {
           <h1 className="text-2xl font-bold">CollabDoc</h1>
         </div>
         <p className="text-muted-foreground mb-8 text-sm">
-          Local-first collaborative document editor
+          Collaborative document editor
         </p>
         <LoginButton />
         <p className="text-muted-foreground mt-6 text-xs">
