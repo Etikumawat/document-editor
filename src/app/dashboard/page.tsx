@@ -9,12 +9,21 @@ import ThemeToggle from "~/components/ui/theme-toggle";
 import SyncStatusWrapper from "~/components/ui/sync-status-wrapper";
 import DeleteDocumentButton from "~/components/ui/delete-document-button";
 
-export default async function Dashboard() {
+const PAGE_SIZE = 10;
+
+interface DashboardProps {
+  searchParams: Promise<{ page?: string }>;
+}
+
+export default async function Dashboard({ searchParams }: DashboardProps) {
   const session = await auth();
   if (!session?.user?.email) redirect("/api/auth/signin");
 
+  const { page } = await searchParams;
+  const currentPage = Math.max(1, parseInt(page ?? "1"));
+  const skip = (currentPage - 1) * PAGE_SIZE;
+
   try {
-    // Upsert user — create if doesn't exist
     const user = await db.user.upsert({
       where: { email: session.user.email },
       update: {
@@ -28,10 +37,18 @@ export default async function Dashboard() {
       },
     });
 
+    const totalDocuments = await db.document.count({
+      where: { ownerId: user.id },
+    });
+
+    const totalPages = Math.ceil(totalDocuments / PAGE_SIZE);
+
     const documents = await db.document.findMany({
       where: { ownerId: user.id },
       orderBy: { updatedAt: "desc" },
       include: { collaborators: true },
+      skip,
+      take: PAGE_SIZE,
     });
 
     const sharedDocs = await db.document.findMany({
@@ -46,6 +63,7 @@ export default async function Dashboard() {
       },
       orderBy: { updatedAt: "desc" },
       include: { collaborators: true },
+      take: 10,
     });
 
     return (
@@ -91,7 +109,7 @@ export default async function Dashboard() {
             <div>
               <h3 className="text-xl font-semibold">My Documents</h3>
               <p className="text-muted-foreground mt-0.5 text-sm">
-                {documents.length} document{documents.length !== 1 ? "s" : ""}
+                {totalDocuments} document{totalDocuments !== 1 ? "s" : ""}
               </p>
             </div>
             <CreateDocumentButton />
@@ -107,36 +125,111 @@ export default async function Dashboard() {
               <CreateDocumentButton />
             </div>
           ) : (
-            <div className="mb-10 grid gap-3">
-              {documents.map((doc) => (
-                <div
-                  key={doc.id}
-                  className="hover:bg-accent hover:border-primary/30 group relative flex items-center justify-between rounded-xl border p-4 transition-all"
-                >
-                  <Link
-                    href={`/editor/${doc.id}`}
-                    className="flex flex-1 items-center gap-3"
+            <>
+              <div className="mb-6 grid gap-3">
+                {documents.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className="hover:bg-accent hover:border-primary/30 group relative flex items-center justify-between rounded-xl border p-4 transition-all"
                   >
-                    <span className="text-2xl">📄</span>
-                    <div>
-                      <h4 className="group-hover:text-primary font-medium transition-colors">
-                        {doc.title}
-                      </h4>
-                      <p className="text-muted-foreground mt-0.5 text-xs">
-                        Updated{" "}
-                        {new Date(doc.updatedAt).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </p>
+                    <Link
+                      href={`/editor/${doc.id}`}
+                      className="flex flex-1 items-center gap-3"
+                    >
+                      <span className="text-2xl">📄</span>
+                      <div>
+                        <h4 className="group-hover:text-primary font-medium transition-colors">
+                          {doc.title}
+                        </h4>
+                        <p className="text-muted-foreground mt-0.5 text-xs">
+                          Updated{" "}
+                          {new Date(doc.updatedAt).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </p>
+                      </div>
+                    </Link>
+                    <div className="ml-4 flex shrink-0 items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {doc.collaborators.length} collaborator
+                        {doc.collaborators.length !== 1 ? "s" : ""}
+                      </Badge>
+                      <DeleteDocumentButton
+                        documentId={doc.id}
+                        documentTitle={doc.title}
+                      />
                     </div>
-                  </Link>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mb-10 flex items-center justify-between">
+                  <p className="text-muted-foreground text-sm">
+                    Page {currentPage} of {totalPages}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/dashboard?page=${Math.max(1, currentPage - 1)}`}
+                    >
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPage === 1}
+                      >
+                        ← Previous
+                      </Button>
+                    </Link>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter(
+                          (p) =>
+                            p === 1 ||
+                            p === totalPages ||
+                            Math.abs(p - currentPage) <= 1,
+                        )
+                        .map((p, idx, arr) => (
+                          <span key={p} className="flex items-center">
+                            {idx > 0 && arr[idx - 1] !== p - 1 && (
+                              <span className="text-muted-foreground px-1">
+                                ...
+                              </span>
+                            )}
+                            <Link href={`/dashboard?page=${p}`}>
+                              <Button
+                                variant={
+                                  p === currentPage ? "default" : "outline"
+                                }
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                              >
+                                {p}
+                              </Button>
+                            </Link>
+                          </span>
+                        ))}
+                    </div>
+                    <Link
+                      href={`/dashboard?page=${Math.min(totalPages, currentPage + 1)}`}
+                    >
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPage === totalPages}
+                      >
+                        Next →
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
 
+          {/* Shared with me */}
           {sharedDocs.length > 0 && (
             <>
               <div className="mb-6 flex items-center justify-between">
@@ -195,26 +288,26 @@ export default async function Dashboard() {
         </main>
 
         {/* Footer */}
-        {/* <footer className="border-t px-6 py-4 text-center text-sm text-muted-foreground mt-auto">
+        <footer className="text-muted-foreground mt-auto border-t px-6 py-4 text-center text-sm">
           Built by{" "}
-          
+          <a
             href="https://github.com/Etikumawat/document-editor"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline hover:text-foreground font-medium"
+            className="hover:text-foreground font-medium underline"
           >
             Eti Kumawat
           </a>{" "}
           ·{" "}
-          
+          <a
             href="https://www.linkedin.com/in/eti-kumawat-5502bb247/"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline hover:text-foreground font-medium"
+            className="hover:text-foreground font-medium underline"
           >
             LinkedIn
           </a>
-        </footer> */}
+        </footer>
       </div>
     );
   } catch (error) {

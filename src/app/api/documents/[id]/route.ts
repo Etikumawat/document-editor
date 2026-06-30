@@ -9,11 +9,18 @@ export async function DELETE(
   try {
     const { id } = await params;
     const session = await auth();
-    if (!session) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Only owner can delete
+    const currentUser = await db.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!currentUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
     const document = await db.document.findUnique({
       where: { id },
     });
@@ -22,7 +29,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    if (document.ownerId !== session?.user?.id) {
+    if (document.ownerId !== currentUser.id) {
       return NextResponse.json(
         { error: "Only the owner can delete this document" },
         { status: 403 },
