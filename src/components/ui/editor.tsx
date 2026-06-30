@@ -54,6 +54,7 @@ export default function Editor({
     ],
     content: initialContent || "",
     editable: !isViewer,
+    immediatelyRender: false,
     onUpdate: ({ editor }) => {
       if (isViewer) return;
       if (saveTimeout.current) clearTimeout(saveTimeout.current);

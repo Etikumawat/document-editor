@@ -12,8 +12,16 @@ const VersionPayload = z.object({
 export async function POST(req: Request) {
   try {
     const session = await auth();
-    if (!session) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const user = await db.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     const body = (await req.json()) as unknown;
@@ -24,12 +32,11 @@ export async function POST(req: Request) {
 
     const { documentId, content, label } = parsed.data;
 
-    // Check permission
     const collaborator = await db.collaborator.findUnique({
       where: {
         documentId_userId: {
           documentId,
-          userId: session.user.id,
+          userId: user.id,
         },
       },
     });
@@ -52,7 +59,7 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   try {
     const session = await auth();
-    if (!session) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

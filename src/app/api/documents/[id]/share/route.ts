@@ -15,16 +15,23 @@ export async function POST(
   try {
     const { id } = await params;
     const session = await auth();
-    if (!session) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Only owner can share
+    const currentUser = await db.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!currentUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
     const document = await db.document.findUnique({
       where: { id },
     });
     // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
-    if (!document || document.ownerId !== session?.user?.id) {
+    if (!document || document.ownerId !== currentUser.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -36,7 +43,6 @@ export async function POST(
 
     const { email, role } = parsed.data;
 
-    // Find user by email
     const targetUser = await db.user.findUnique({
       where: { email },
     });
@@ -48,7 +54,6 @@ export async function POST(
       );
     }
 
-    // Add collaborator
     const collaborator = await db.collaborator.upsert({
       where: {
         documentId_userId: {
