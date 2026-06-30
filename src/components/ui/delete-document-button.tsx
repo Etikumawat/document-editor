@@ -1,5 +1,6 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
 
@@ -50,7 +51,7 @@ export default function DeleteDocumentButton({
         }}
         className="text-red-500 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-50 hover:text-red-600"
       >
-        🗑️
+        <Trash2 className="h-4 w-4" />
       </Button>
 
       {showConfirm && (
